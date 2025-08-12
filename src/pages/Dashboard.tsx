@@ -114,6 +114,7 @@ const Dashboard: React.FC = () => {
                         key={child.id}
                         className={selectedChildId === child.id ? 'selected' : ''}
                         onClick={() => setSelectedChildId(child.id)}
+                        style={{backgroundColor: selectedChildId === child.id ? '#030067ff' : '#f8f9fa01', border: '2px solid #030067ff', padding: '0.5rem 1rem', margin: '0.5rem'}}
                     >
                         {child.username}
                     </button>
