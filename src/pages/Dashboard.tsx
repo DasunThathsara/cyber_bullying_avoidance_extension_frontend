@@ -94,7 +94,8 @@ const Dashboard: React.FC = () => {
         <div className="dashboard-container">
             <h1>Parent Dashboard</h1>
             <button onClick={handleLogout} style={{position: 'absolute', top: '20px', right: '20px'}}>Logout</button>
-            
+            <img src="/logo.jpg" alt="Logo" style={{position: 'absolute', top: '20px', left: '20px', width: '60px', height: '60px', borderRadius: '8px'}} />
+
             <div className="child-management">
                 <h2>Manage Children</h2>
                 <form onSubmit={handleAddChild}>
