@@ -3,19 +3,19 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 interface Child {
-    id: number;
+    id: string;
     username: string;
 }
 
 interface BlockedSearch {
-    id: number;
+    id: string;
     search_query: string;
     timestamp: string;
 }
 
 const Dashboard: React.FC = () => {
     const [children, setChildren] = useState<Child[]>([]);
-    const [selectedChildId, setSelectedChildId] = useState<number | null>(null);
+    const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
     const [searches, setSearches] = useState<BlockedSearch[]>([]);
     const [newChildUsername, setNewChildUsername] = useState('');
     const [newChildPassword, setNewChildPassword] = useState('');
@@ -33,6 +33,8 @@ const Dashboard: React.FC = () => {
             setChildren(response.data);
             if(response.data.length > 0 && !selectedChildId) {
                 setSelectedChildId(response.data[0].id);
+            } else if (response.data.length === 0) {
+                setSelectedChildId(null);
             }
         } catch (err) {
             console.error("Failed to fetch children", err);
@@ -85,6 +87,18 @@ const Dashboard: React.FC = () => {
         }
     };
     
+    const handleDeleteChild = async (childId: string, childUsername: string) => {
+        if (window.confirm(`Are you sure you want to delete the account for "${childUsername}"? This action is permanent.`)) {
+            try {
+                await axios.delete(`${apiUrl}/children/${childId}`, authHeaders);
+                fetchChildren();
+            } catch (err) {
+                setError("Failed to delete the child account. Please try again.");
+                console.error(`Failed to delete child ${childId}`, err);
+            }
+        }
+    };
+    
     const handleLogout = () => {
         localStorage.removeItem('authToken');
         navigate('/login');
@@ -111,14 +125,36 @@ const Dashboard: React.FC = () => {
             <h2>View Activity</h2>
             <div className="child-list">
                 {children.map(child => (
-                    <button 
-                        key={child.id}
-                        className={selectedChildId === child.id ? 'selected' : ''}
-                        onClick={() => setSelectedChildId(child.id)}
-                        style={{backgroundColor: selectedChildId === child.id ? '#030067ff' : '#f8f9fa01', border: '2px solid #030067ff', padding: '0.5rem 1rem', margin: '0.5rem'}}
-                    >
-                        {child.username}
-                    </button>
+                    <div key={child.id} style={{ display: 'flex', alignItems: 'center', margin: '0.5rem' }}>
+                        <button 
+                            className={selectedChildId === child.id ? 'selected' : ''}
+                            onClick={() => setSelectedChildId(child.id)}
+                            style={{
+                                backgroundColor: selectedChildId === child.id ? '#030067ff' : '#f8f9fa01',
+                                border: '2px solid #030067ff',
+                                padding: '0.5rem 1rem',
+                                flexGrow: 1,
+                            }}
+                        >
+                            {child.username}
+                        </button>
+                        <button
+                            onClick={() => handleDeleteChild(child.id, child.username)}
+                            style={{
+                                marginLeft: '10px',
+                                padding: '1px 7px 2px 7px',
+                                backgroundColor: '#dc3545',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '100%',
+                                cursor: 'pointer',
+                                transform: 'translate(-28px, -15px)',
+                                scale: '0.8'
+                            }}
+                        >
+                            X
+                        </button>
+                    </div>
                 ))}
             </div>
 
@@ -133,14 +169,14 @@ const Dashboard: React.FC = () => {
                     <tbody>
                         {searches.map(search => (
                             <tr key={search.id}>
-                                <td>{search.search_query}</td>
+                                <td style={{overflowX: 'scroll', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '20px'}}>{search.search_query}</td>
                                 <td>{new Date(search.timestamp).toLocaleString()}</td>
                             </tr>
                         ))}
                     </tbody>
                 </table>
             ) : (
-                <p>{selectedChildId ? `No blocked activity found for this child.` : 'Select a child to view their activity.'}</p>
+                <p>{selectedChildId ? `No blocked activity found for this child.` : children.length > 0 ? 'Select a child to view their activity.' : 'Add a child to get started.'}</p>
             )}
         </div>
     );
