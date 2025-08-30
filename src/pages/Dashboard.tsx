@@ -50,21 +50,22 @@ const Dashboard: React.FC = () => {
         fetchChildren();
     }, [fetchChildren]);
 
-    useEffect(() => {
-        const fetchSearches = async () => {
-            if (selectedChildId) {
-                try {
-                    const response = await axios.get(`${apiUrl}/searches/${selectedChildId}`, authHeaders);
-                    setSearches(response.data);
-                } catch (err) {
-                    console.error(`Failed to fetch searches for child ${selectedChildId}`, err);
-                }
-            } else {
-                setSearches([]); 
+    const fetchSearches = useCallback(async () => {
+        if (selectedChildId) {
+            try {
+                const response = await axios.get(`${apiUrl}/searches/${selectedChildId}`, authHeaders);
+                setSearches(response.data);
+            } catch (err) {
+                console.error(`Failed to fetch searches for child ${selectedChildId}`, err);
             }
-        };
-        fetchSearches();
+        } else {
+            setSearches([]); 
+        }
     }, [selectedChildId, apiUrl, token]);
+
+    useEffect(() => {
+        fetchSearches();
+    }, [fetchSearches]);
 
     const handleAddChild = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -95,6 +96,22 @@ const Dashboard: React.FC = () => {
             } catch (err) {
                 setError("Failed to delete the child account. Please try again.");
                 console.error(`Failed to delete child ${childId}`, err);
+            }
+        }
+    };
+
+    const handleClearLog = async () => {
+        if (!selectedChildId) return;
+
+        const childUsername = children.find(c => c.id === selectedChildId)?.username || 'this child';
+
+        if (window.confirm(`Are you sure you want to clear the entire search log for "${childUsername}"? This action cannot be undone.`)) {
+            try {
+                await axios.delete(`${apiUrl}/searches/clear/${selectedChildId}`, authHeaders);
+                setSearches([]); // Clear searches from state for an immediate UI update
+            } catch (err) {
+                setError("Failed to clear search log. Please try again.");
+                console.error("Failed to clear search log", err);
             }
         }
     };
@@ -140,6 +157,7 @@ const Dashboard: React.FC = () => {
                         </button>
                         <button
                             onClick={() => handleDeleteChild(child.id, child.username)}
+                            title="Delete Child Account"
                             style={{
                                 marginLeft: '10px',
                                 padding: '1px 7px 2px 7px',
@@ -156,6 +174,22 @@ const Dashboard: React.FC = () => {
                         </button>
                     </div>
                 ))}
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '2rem' }}>
+                <h3>Blocked Searches</h3>
+                {searches.length > 0 && (
+                    <button onClick={handleClearLog} style={{
+                        padding: '0.5rem 1rem',
+                        backgroundColor: '#ffc107',
+                        color: 'black',
+                        border: 'none',
+                        borderRadius: '4px',
+                        cursor: 'pointer'
+                    }}>
+                        Clear Log
+                    </button>
+                )}
             </div>
 
             {searches.length > 0 ? (
